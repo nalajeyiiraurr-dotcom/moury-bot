@@ -97,7 +97,7 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("siap kak 𖹭")
             return
         if "tidak jadi" in low or "gak jadi" in low:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="oke kak terimakasih ya 𖹭\nditunggu next order nya kak 👀")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="oke kak terimakasih ya 𖹭\nditunggu next order nya kak.")
             await context.bot.send_message(chat_id=ADMIN_ID, text=f"❌ buyer gak jadi\n dari: {get_buyer_info(update.effective_user)}\n{order_map[existing_key]['buyer_text']}")
             del order_map[existing_key]
             return
@@ -212,8 +212,9 @@ setelah transfer kirim buktinya di sini tanpa di crop/edit yay!
 
     #.done = selesai
     if low in [".done","done",".selesai","selesai"]:
-        done_text = """── ִֶָ𖹭 the love u ordered has arrived safely ‹𝟹
-kalau berkenan, boleh bantu isi rnk di ⊱ @komentagr ⊰ yaa kkaa, terimakasih banyak!"""
+        done_text = """the love u ordered has arrived safely
+
+terimakasih banyak sudah beli di moury tokki ya kakak! semoga kuotanya awet dan bermanfaat, kalau berkenan boleh bantu isi honest review di @komentagr yaa. ditunggu order selanjutnyaa!"""
         await context.bot.send_message(chat_id=buyer_id, text=f"{done_text}\n\n{buyer_text}")
         await update.message.reply_text("done selesai")
         del order_map[replied_id]
