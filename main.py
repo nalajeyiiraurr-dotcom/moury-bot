@@ -211,10 +211,8 @@ setelah transfer kirim buktinya di sini tanpa di crop/edit yay!
         return
 
     #.done = selesai
-    if low in [".done","done",".selesai","selesai"]:
-        done_text = """the love u ordered has arrived safely
-
-terimakasih banyak sudah beli di moury tokki ya kakak! semoga kuotanya awet dan bermanfaat, kalau berkenan boleh bantu isi honest review di @komentagr yaa. ditunggu order selanjutnyaa!"""
+        if low in [".done","done",".selesai","selesai"]:
+        done_text = "the love u ordered has arrived safely\n\nterimakasih banyak sudah beli di moury tokki ya kakak! semoga kuotanya awet dan bermanfaat, kalau berkenan boleh bantu isi honest review di @komentagr yaa. ditunggu order selanjutnyaa!"
         await context.bot.send_message(chat_id=buyer_id, text=f"{done_text}\n\n{buyer_text}")
         await update.message.reply_text("done selesai")
         del order_map[replied_id]
