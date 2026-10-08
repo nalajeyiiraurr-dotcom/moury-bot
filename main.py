@@ -5,6 +5,7 @@ from telegram.ext import Application, MessageHandler, filters, ContextTypes, Com
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
 order_map = {}
+last_order_by_user = {}
 
 def format_rupiah(s):
     clean = re.sub(r'[^0-9]', '', s)
@@ -56,7 +57,7 @@ payment : qris"""
 
 async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id == ADMIN_ID: return
-    if update.message.text.startswith("/"): return
+    if update.message.text and update.message.text.startswith("/"): return
     text = update.message.text
     low = text.lower()
     existing_key = None
@@ -86,9 +87,22 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not valid:
         await update.message.reply_text(f"Produknya kurang lengkap Kak 𖹭\n\nKurang : {', '.join(missing)}\nWajib ada kartu + kuota + masa aktif ya.\n\nSalah : axis\nBenar : axis 1GB 1 tahun / by.u 1gb 1 tahun\n\nTolong perbaiki lagi ya Kak 𖹭")
         return
+    last_order_by_user[update.effective_chat.id] = text
     sent = await context.bot.send_message(chat_id=ADMIN_ID, text=f"📥 ORDER BARU\n\n{text}")
     order_map[sent.message_id] = {"buyer_id": update.effective_chat.id, "buyer_text": text}
     await update.message.reply_text("diterima kak 𖹭 admin akan segera cek ya")
+
+async def handle_bukti_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id == ADMIN_ID: return
+    if not update.message.photo: return
+    user = update.effective_user
+    last_text = last_order_by_user.get(update.effective_chat.id, "order ga kecatet woe")
+    try:
+        await context.bot.send_message(chat_id=ADMIN_ID, text=f"🚨 BUKTI TF MASUK WOE!\n\nDari: @{user.username} | ID: {user.id}\n\n{last_text}")
+        await context.bot.forward_message(chat_id=ADMIN_ID, from_chat_id=update.effective_chat.id, message_id=update.message.message_id)
+    except Exception as e:
+        print(f"gagal notif bukti: {e}")
+    await update.message.reply_text("payment di terima ya kak mohon tunggu konfirmasi dari admin 𖹭 bukti akan segera di cek ya")
 
 async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id!= ADMIN_ID or not update.message.reply_to_message: return
@@ -128,8 +142,9 @@ def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_admin_reply))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_bukti_photo))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_buyer))
-    print("bot jalan woe fix by.u 1gb 1 tahun")
+    print("bot jalan woe fix foto bukti + by.u 1gb 1 tahun")
     app.run_polling()
 
 if __name__ == "__main__":
