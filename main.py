@@ -34,7 +34,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id == ADMIN_ID:
         await update.message.reply_text("halo bos 𖹭 bot siap")
         return
-    msg = """halo kak 𖹭
+    msg = """halo kakak 𖹭
 selamat datang di moury tokki
 
 mau isi kuota apa hari ini?
@@ -72,7 +72,7 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("siap kak 𖹭")
             return
         if "tidak jadi" in low or "gak jadi" in low:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="oke kak terimakasih ya 𖹭\nditunggu next order nya kak 🙏")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="oke kak terimakasih ya 𖹭\nditunggu next order nya kak 🐇🪽")
             await context.bot.send_message(chat_id=ADMIN_ID, text=f"❌ BUYER GAK JADI\n{order_map[existing_key]['buyer_text']}")
             del order_map[existing_key]
             return
@@ -85,7 +85,7 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     valid, missing = is_product_valid(produk)
     if not valid:
-        await update.message.reply_text(f"Produknya kurang lengkap Kak 𖹭\n\nKurang : {', '.join(missing)}\nWajib ada kartu + kuota + masa aktif ya.\n\nSalah : axis\nBenar : axis 1GB 1 tahun / by.u 1gb 1 tahun\n\nTolong perbaiki lagi ya Kak 𖹭")
+        await update.message.reply_text(f"produknya kurang lengkap kak 𖹭\n\nKurang : {', '.join(missing)}\nwajib ada kartu + kuota + masa aktif ya.\n\nsalah : axis\nbenar : axis 1GB 1 tahun \n\ntolong perbaiki lagi ya kak 🐇🪽")
         return
     last_order_by_user[update.effective_chat.id] = text
     sent = await context.bot.send_message(chat_id=ADMIN_ID, text=f"📥 ORDER BARU\n\n{text}")
@@ -96,13 +96,13 @@ async def handle_bukti_photo(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if update.effective_user.id == ADMIN_ID: return
     if not update.message.photo: return
     user = update.effective_user
-    last_text = last_order_by_user.get(update.effective_chat.id, "order ga kecatet woe")
+    last_text = last_order_by_user.get(update.effective_chat.id, "order ga kecatet")
     try:
-        await context.bot.send_message(chat_id=ADMIN_ID, text=f"🚨 BUKTI TF MASUK WOE!\n\nDari: @{user.username} | ID: {user.id}\n\n{last_text}")
+        await context.bot.send_message(chat_id=ADMIN_ID, text=f"🚨 BUKTI TF MASUK\n\nDari: @{user.username} | ID: {user.id}\n\n{last_text}")
         await context.bot.forward_message(chat_id=ADMIN_ID, from_chat_id=update.effective_chat.id, message_id=update.message.message_id)
     except Exception as e:
         print(f"gagal notif bukti: {e}")
-    await update.message.reply_text("payment di terima ya kak mohon tunggu konfirmasi dari admin 𖹭 bukti akan segera di cek ya")
+    await update.message.reply_text("bukti diterima kak, mohon tunggu konfirmasi admin ya 𖹭")
 
 async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id!= ADMIN_ID or not update.message.reply_to_message: return
@@ -122,16 +122,16 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await context.bot.send_message(chat_id=buyer_id, text=f"mohon maaf kak harganya sudah berubah 𖹭\n\nproduk : {produk_baru}\ntujuan : {tujuan_baru}\nharga terbaru : {harga_baru}\n\napakah mau lanjut?\n\n```\nmau lanjut\nmaaf tidak jadi\n```", parse_mode="Markdown")
         await update.message.reply_text(f"done {harga_baru}")
         return
-    if any(c.isdigit() for c in low) and ":" not in text and low not in [".pay",".rekber"]:
+    if any(c.isdigit() for c in low) and ":" not in text and low not in [".pay",".rekber",".p","p"]:
         harga_baru = format_rupiah(text.strip())
         data["new_price"] = harga_baru
         order_map[replied_id] = data
         await context.bot.send_message(chat_id=buyer_id, text=f"mohon maaf kak harganya sudah berubah menjadi Rp {harga_baru} apakah mau lanjut?\n\n```\nmau lanjut\nmaaf tidak jadi\n```", parse_mode="Markdown")
         await update.message.reply_text(f"done {harga_baru}")
         return
-    if low in [".pay","pay"]:
-        await context.bot.send_message(chat_id=buyer_id, text=f"halo kak 𖹭\nuntuk pembayaran cek di @nupah ya.\nsetelah transfer kirim buktinya di sini tanpa di crop/edit ya\n\n{buyer_text}")
-        await update.message.reply_text("done payment")
+    if low in [".pay","pay",".p","p"]:
+        await context.bot.send_message(chat_id=buyer_id, text=f"halo kak, pembayaran sudah masuk ya. mohon ditunggu maksimal 1 jam. jika lebih dari 1 jam belum ada kabar silahkan ke roomchat admin @cAsisten ya kak. terima kasih 🐇\n\n{buyer_text}")
+        await update.message.reply_text("done.p")
         return
     if low in [".rekber","rekber"]:
         await context.bot.send_message(chat_id=buyer_id, text=f"silakan kalau mau rekber kak 𖹭\nwajib di @rekberfamous saja ya\n\nadmin menggunakan payment dana dan ini username admin yang akan masuk ke link grup yaitu @PENTINGY silakan langsung kirim link ke roomchat admin tersebut\n\n{buyer_text}")
@@ -144,7 +144,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_admin_reply))
     app.add_handler(MessageHandler(filters.PHOTO, handle_bukti_photo))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_buyer))
-    print("bot jalan woe fix foto bukti + by.u 1gb 1 tahun")
+    print("bot jalan woe fix bukti +.p pendek")
     app.run_polling()
 
 if __name__ == "__main__":
