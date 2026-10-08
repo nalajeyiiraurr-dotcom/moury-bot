@@ -1,5 +1,5 @@
 import os, re, time
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, MessageHandler, filters, ContextTypes, CommandHandler
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -12,12 +12,9 @@ blocked_users = set()
 
 def format_rupiah(s):
     clean = re.sub(r'[^0-9]', '', s)
-    if not clean:
-        return s
-    try:
-        return f"{int(clean):,}".replace(",", ".")
-    except:
-        return s
+    if not clean: return s
+    try: return f"{int(clean):,}".replace(",", ".")
+    except: return s
 
 def get_field(text, key):
     for line in text.splitlines():
@@ -39,10 +36,34 @@ def get_buyer_info(user):
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id == ADMIN_ID:
-        await update.message.reply_text("halo bos bot siap p proses pay nominal done selesai")
+        await update.message.reply_text("halo bos bot siap:.p.pay.rekber.done.unblock")
         return
-    msg = "halo kak selamat datang di moury tokki\n\nmau isi kuota apa hari ini\nisi format di bawah ini ya kak\n\nformat order\nproduk :\ntujuan :\nchoice : langsung atau rekber @rekberfamous\npayment :\n\npricelist : t.me/kuotar/102\n\ncontoh\nproduk : by.u 1gb 1 tahun\ntujuan : 08xxxxxxxxxx\nchoice : langsung\npayment : qris"
-    await update.message.reply_text(msg)
+    keyboard = [
+        [InlineKeyboardButton("⚠️ WAJIB BACA SEBELUM ORDER", url="https://t.me/exprovi/38")],
+        [InlineKeyboardButton("📱 Kuota XL", url="https://t.me/kuotar/6"),
+         InlineKeyboardButton("📱 Kuota Axis", url="https://t.me/kuotar/12")],
+        [InlineKeyboardButton("📱 Kuota Indosat/IM3", url="https://t.me/kuotar/19"),
+         InlineKeyboardButton("📱 Kuota Three/3", url="https://t.me/kuotar/21")],
+        [InlineKeyboardButton("📱 Kuota Telkomsel", url="https://t.me/kuotar/23"),
+         InlineKeyboardButton("📱 Kuota Smartfren", url="https://t.me/kuotar/25")],
+        [InlineKeyboardButton("📱 Kuota By.U", url="https://t.me/kuotar/27"),
+         InlineKeyboardButton("💳 Pulsa", url="https://t.me/kuotar/41")],
+        [InlineKeyboardButton("⚡ Token Listrik", url="https://t.me/kuotar/50"),
+         InlineKeyboardButton("⏰ Masa Aktif Kartu", url="https://t.me/kuotar/97")],
+        [InlineKeyboardButton("📝 Format Order", url="https://t.me/exprovi/46")],
+        [InlineKeyboardButton("👩🏻‍💻 CS t.me/cAsisten", url="https://t.me/cAsisten")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    text = """halo kak selamat datang di moury tokki 𖹭
+
+mau beli apa hari ini?
+
+pricelist lengkap ada di tombol bawah ya kak, tinggal klik aja sesuai kebutuhan ✨
+
+jangan lupa baca WAJIB BACA SEBELUM ORDER dulu ya biar prosesnya lancar 𖹭
+
+makasih udah mampir ke moury tokki!"""
+    await update.message.reply_text(text, reply_markup=reply_markup)
 
 async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id == ADMIN_ID: return
@@ -51,13 +72,17 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id in blocked_users: return
     text = update.message.text or ""
     now = time.time()
-    if user_id not in spam_tracker:
-        spam_tracker[user_id] = []
+    if user_id not in spam_tracker: spam_tracker[user_id] = []
     spam_tracker[user_id] = [t for t in spam_tracker[user_id] if now - t < 60]
     spam_tracker[user_id].append(now)
     if len(spam_tracker[user_id]) > 7:
         blocked_users.add(user_id)
-        await context.bot.send_message(chat_id=ADMIN_ID, text=f"auto block spam {get_buyer_info(update.effective_user)} text {text[:200]}")
+        await context.bot.send_message(chat_id=ADMIN_ID, text=f"spam detected auto block 5 menit buyer {get_buyer_info(update.effective_user)}")
+        await update.message.reply_text("halo kak mohon maaf kamu terdeteksi spam karena mengirim pesan terlalu cepat yaa, chat kamu dijeda dulu selama 5 menit ya kak, setelah 5 menit boleh chat lagi ya, terima kasih banyak ya kakak!")
+        async def unblock_job(context):
+            blocked_users.discard(user_id)
+            spam_tracker.pop(user_id, None)
+        context.job_queue.run_once(unblock_job, 300)
         return
     produk = get_field(text, "produk")
     tujuan = get_field(text, "tujuan")
@@ -93,9 +118,10 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         try:
             target_id = int(re.findall(r'\d+', text_raw)[0])
             blocked_users.discard(target_id)
+            spam_tracker.pop(target_id, None)
             await update.message.reply_text(f"done unblock {target_id}")
         except:
-            await update.message.reply_text("format unblock id")
+            await update.message.reply_text("format:.unblock id")
         return
     if not update.message.reply_to_message: return
     replied_id = update.message.reply_to_message.message_id
@@ -112,12 +138,10 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 try:
                     angka = nominal_raw.replace("k","")
                     nominal = format_rupiah(str(int(float(angka)*1000)))
-                except:
-                    nominal = nominal_raw
-            else:
-                nominal = format_rupiah(nominal_raw)
-        produk_val = get_field(buyer_text, 'produk') or 'indosat 15gb 3 hari'
-        tujuan_val = get_field(buyer_text, 'tujuan') or '0812345678'
+                except: nominal = nominal_raw
+            else: nominal = format_rupiah(nominal_raw)
+        produk_val = get_field(buyer_text, 'produk') or '-'
+        tujuan_val = get_field(buyer_text, 'tujuan') or '-'
         choice_val = get_field(buyer_text, 'choice') or 'langsung'
         payment_val = get_field(buyer_text, 'payment') or 'qris'
         if nominal:
@@ -127,7 +151,14 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await context.bot.send_message(chat_id=buyer_id, text=pay_text)
         await update.message.reply_text(f"done pay {nominal}")
         return
-    if low in [".p","p",".proses","proses"]:
+    if low in [".rekber","rekber",".rekberfamous","rekberfamous"]:
+        produk_val = get_field(buyer_text, 'produk') or '-'
+        tujuan_val = get_field(buyer_text, 'tujuan') or '-'
+        rekber_text = f"silahkan kalau mau rekber kak 𖹭\nwajib di @rekberfamous saja ya\n\nadmin menggunakan payment dana dan ini username admin yang akan masuk ke link grup yaitu @pentingY silahkan langsung kirim link grup ke roomchat admin tersebut.\n\nproduk : {produk_val}\ntujuan : {tujuan_val}"
+        await context.bot.send_message(chat_id=buyer_id, text=f"{rekber_text}\n\n{buyer_text}")
+        await update.message.reply_text("done rekber")
+        return
+    if low in [".p","p",".proses","proses",".acc","acc"]:
         proses_text = "ting! pembayaran sudah masuk ya. mohon ditunggu maksimal 1 jam. jika lebih dari 1 jam belum ada kabar silahkan ke roomchat admin @cAsisten ya kak. terima kasih!"
         await context.bot.send_message(chat_id=buyer_id, text=f"{proses_text}\n\n{buyer_text}")
         await update.message.reply_text("done p proses")
