@@ -205,7 +205,7 @@ setelah transfer kirim buktinya di sini tanpa di crop/edit yay!
 
     #.p = proses
     if low in [".p","p",".proses","proses","process",".process"]:
-        proses_text = """ting!, pembayaran sudah masuk ya. mohon ditunggu maksimal 1 jam. jika lebih dari 1 jam belum ada kabar silahkan ke roomchat admin @cAsisten ya kak. terima kasih 🐇"""
+        proses_text = """ting!, pembayaran sudah masuk ya. mohon ditunggu maksimal 1 jam. jika lebih dari 1 jam belum ada kabar silahkan ke roomchat admin @cAsisten ya kak. terima kasih!"""
         await context.bot.send_message(chat_id=buyer_id, text=f"{proses_text}\n\n{buyer_text}")
         await update.message.reply_text("done p proses")
         return
@@ -213,7 +213,7 @@ setelah transfer kirim buktinya di sini tanpa di crop/edit yay!
     #.done = selesai
     if low in [".done","done",".selesai","selesai"]:
         done_text = """── ִֶָ𖹭 the love u ordered has arrived safely ‹𝟹
-kalau berkenan, boleh bantu isi rnk di ⊱ @komentagr ⊰ yaa kkaa, terimakasih banyak! 🐇"""
+kalau berkenan, boleh bantu isi rnk di ⊱ @komentagr ⊰ yaa kkaa, terimakasih banyak!"""
         await context.bot.send_message(chat_id=buyer_id, text=f"{done_text}\n\n{buyer_text}")
         await update.message.reply_text("done selesai")
         del order_map[replied_id]
