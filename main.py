@@ -40,21 +40,21 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     keyboard = [
         [InlineKeyboardButton("⚠️ WAJIB BACA SEBELUM ORDER", url="https://t.me/exprovi/38")],
-        [InlineKeyboardButton("📱 Kuota XL", url="https://t.me/kuotar/6"),
-         InlineKeyboardButton("📱 Kuota Axis", url="https://t.me/kuotar/12")],
-        [InlineKeyboardButton("📱 Kuota Indosat/IM3", url="https://t.me/kuotar/19"),
-         InlineKeyboardButton("📱 Kuota Three/3", url="https://t.me/kuotar/21")],
-        [InlineKeyboardButton("📱 Kuota Telkomsel", url="https://t.me/kuotar/23"),
-         InlineKeyboardButton("📱 Kuota Smartfren", url="https://t.me/kuotar/25")],
-        [InlineKeyboardButton("📱 Kuota By.U", url="https://t.me/kuotar/27"),
-         InlineKeyboardButton("💳 Pulsa", url="https://t.me/kuotar/41")],
+        [InlineKeyboardButton("Kuota XL", url="https://t.me/kuotar/6"),
+         InlineKeyboardButton("Kuota Axis", url="https://t.me/kuotar/12")],
+        [InlineKeyboardButton("Kuota Indosat/IM3", url="https://t.me/kuotar/19"),
+         InlineKeyboardButton("Kuota Three/3", url="https://t.me/kuotar/21")],
+        [InlineKeyboardButton("Kuota Telkomsel", url="https://t.me/kuotar/23"),
+         InlineKeyboardButton("Kuota Smartfren", url="https://t.me/kuotar/25")],
+        [InlineKeyboardButton("Kuota By.U", url="https://t.me/kuotar/27"),
+         InlineKeyboardButton("Pulsa", url="https://t.me/kuotar/41")],
         [InlineKeyboardButton("⚡ Token Listrik", url="https://t.me/kuotar/50"),
          InlineKeyboardButton("⏰ Masa Aktif Kartu", url="https://t.me/kuotar/97")],
         [InlineKeyboardButton("📝 Format Order", url="https://t.me/exprovi/46")],
-        [InlineKeyboardButton("👩🏻‍💻 CS t.me/cAsisten", url="https://t.me/cAsisten")]
+        [InlineKeyboardButton("👩🏻‍💻 CS", url="https://t.me/cAsisten")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    text = """halo kak selamat datang di moury tokki 𖹭
+    text = """h-hiluu kak selamat datang di moury tokki 𖹭
 
 mau beli apa hari ini?
 
