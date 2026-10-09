@@ -1,5 +1,5 @@
-import os, re, time, pytz
-from datetime import datetime
+import os, re, time
+from datetime import datetime, timezone, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, MessageHandler, filters, ContextTypes, CommandHandler, CallbackQueryHandler
 
@@ -12,7 +12,7 @@ spam_tracker = {}
 blocked_users = set()
 stok_map = {}
 
-WIB = pytz.timezone("Asia/Jakarta")
+WIB = timezone(timedelta(hours=7))
 JAM_TUTUP_MULAI = 21
 JAM_TUTUP_SELESAI = 9
 
