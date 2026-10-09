@@ -176,7 +176,7 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     clean_tujuan = re.sub(r'[^0-9]', '', tujuan)
     if clean_tujuan in blacklist_map:
         alasan = blacklist_map[clean_tujuan]
-        await update.message.reply_text(f"mohon maaf kak nomor {tujuan} terblacklist karena {alasan} ya 𖹭 silahkan hubungi @cAsisten jika merasa salah")
+        await update.message.reply_text(f"mohon maaf kak nomor {tujuan} terblacklist karena {alasan} ya 𖹭 silahkan hubungi @cAsisten jika merasa ada kesalahan")
         for aid in ADMIN_IDS:
             try: await context.bot.send_message(chat_id=aid, text=f"⚠️ BLACKLIST ORDER DITOLAK\nNomor: {tujuan} ({alasan})\nBuyer: {buyer_info}\n{text}")
             except: pass
@@ -357,11 +357,9 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(f"done pay {nominal}")
         return
 
-    if low in [".rekber","rekber",".rekberfamous","rekberfamous"]:
-        produk_val = get_field(buyer_text, 'produk') or '-'
-        tujuan_val = get_field(buyer_text, 'tujuan') or '-'
-        rekber_text = f"silahkan kalau mau rekber kak 𖹭\nwajib di @rekberfamous saja ya\n\nadmin menggunakan payment dana dan ini username admin yang akan masuk ke link grup yaitu @pentingY silahkan langsung kirim link grup ke roomchat admin tersebut.\n\nproduk : {produk_val}\ntujuan : {tujuan_val}"
-        await context.bot.send_message(chat_id=buyer_id, text=f"{rekber_text}\n\n{buyer_text}")
+        if low in [".rekber","rekber",".rekberfamous","rekberfamous"]:
+        rekber_text = "silahkan kalau mau rekber kak 𖹭\nwajib di @rekberfamous saja ya\n\nadmin menggunakan payment dana dan ini username admin yang akan masuk ke link grup yaitu @pentingY silahkan langsung kirim link grup ke roomchat admin tersebut."
+        await context.bot.send_message(chat_id=buyer_id, text=rekber_text)
         await update.message.reply_text("done rekber")
         return
 
