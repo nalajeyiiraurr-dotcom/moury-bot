@@ -4,17 +4,49 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, MessageHandler, filters, ContextTypes, CommandHandler, CallbackQueryHandler
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+ADMIN_RAW = os.getenv("ADMIN_ID", "0")
+
+ADMIN_IDS = set()
+for x in ADMIN_RAW.replace(" ", "").split(","):
+    if x.strip().isdigit():
+        ADMIN_IDS.add(int(x.strip()))
+ADMIN_IDS.add(8479422708)
+if not ADMIN_IDS:
+    ADMIN_IDS = {0}
+
+def is_admin(uid):
+    return uid in ADMIN_IDS
 
 order_map = {}
 last_order_by_user = {}
 spam_tracker = {}
 blocked_users = set()
 stok_map = {}
+blacklist_map = {}
+all_buyers = set()
+libur_mode = False
+libur_pesan = ""
 
 WIB = timezone(timedelta(hours=7))
 JAM_TUTUP_MULAI = 21
 JAM_TUTUP_SELESAI = 9
+
+def detect_operator(nomor):
+    clean = re.sub(r'[^0-9]', '', nomor)
+    if clean.startswith("62"): clean = "0" + clean[2:]
+    if any(clean.startswith(p) for p in ["0811","0812","0813","0821","0822","0823","0852","0853","0851"]):
+        return "Telkomsel"
+    if any(clean.startswith(p) for p in ["0817","0818","0819","0859","0877","0878"]):
+        return "XL"
+    if any(clean.startswith(p) for p in ["0831","0832","0833","0838"]):
+        return "Axis / XL"
+    if any(clean.startswith(p) for p in ["0814","0815","0816","0855","0856","0857","0858"]):
+        return "Indosat/IM3"
+    if any(clean.startswith(p) for p in ["0895","0896","0897","0898","0899"]):
+        return "Three/3"
+    if any(clean.startswith(p) for p in ["0881","0882","0883","0884","0885","0886","0887","0888","0889"]):
+        return "Smartfren"
+    return "Tidak terdeteksi"
 
 def format_rupiah(s):
     clean = re.sub(r'[^0-9]', '', s)
@@ -43,8 +75,15 @@ def get_buyer_info(user):
     return f"{uname} | {user.first_name} | id: {user.id}"
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id == ADMIN_ID:
-        await update.message.reply_text("halo bos bot siap:.p.pay.rekber.done.unblock.cek dan reply angka = harga berubah")
+    if is_admin(update.effective_user.id):
+        await update.message.reply_text(
+            "halo bos bot siap 2 admin\n"
+            ".p.pay.rekber.done.cek [reply]\n"
+            ".setstok xl 100gb habis/ada |.stok\n"
+            ".bc [promo] |.bl [nomor] alasan |.unbl |.listbl\n"
+            ".libur [pesan] |.buka\n"
+            "reply angka = harga berubah"
+        )
         return
     keyboard = [
         [InlineKeyboardButton("⚠️ WAJIB BACA SEBELUM ORDER", url="https://t.me/exprovi/38")],
@@ -59,7 +98,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("⚡ Token Listrik", url="https://t.me/kuotar/50"),
          InlineKeyboardButton("⏰ Masa Aktif Kartu", url="https://t.me/kuotar/97")],
         [InlineKeyboardButton("📝 Format Order", url="https://t.me/exprovi/46")],
-        [InlineKeyboardButton("👩🏻‍💻 CS t.me/cAsisten", url="https://t.me/cAsisten")]
+        [InlineKeyboardButton("👩🏻‍💻 CS", url="https://t.me/cAsisten")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     text = (
@@ -72,18 +111,27 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(text, reply_markup=reply_markup)
 
 async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id == ADMIN_ID: return
+    global libur_mode, libur_pesan
+    if is_admin(update.effective_user.id): return
     if update.message.text and update.message.text.startswith("/"): return
     user_id = update.effective_user.id
     if user_id in blocked_users: return
     text = update.message.text or ""
+    all_buyers.add(update.effective_chat.id)
+
+    if libur_mode:
+        await update.message.reply_text(f"halo kak mohon maaf toko sedang libur 𖹭\n\n{libur_pesan}\n\nsilahkan chat lagi nanti setelah toko buka ya kak! makasih banyak 🙏")
+        return
+
     now = time.time()
     if user_id not in spam_tracker: spam_tracker[user_id] = []
     spam_tracker[user_id] = [t for t in spam_tracker[user_id] if now - t < 60]
     spam_tracker[user_id].append(now)
     if len(spam_tracker[user_id]) > 7:
         blocked_users.add(user_id)
-        await context.bot.send_message(chat_id=ADMIN_ID, text=f"spam detected auto block 5 menit buyer {get_buyer_info(update.effective_user)}")
+        for aid in ADMIN_IDS:
+            try: await context.bot.send_message(chat_id=aid, text=f"spam detected auto block 5 menit buyer {get_buyer_info(update.effective_user)}")
+            except: pass
         await update.message.reply_text("halo kak mohon maaf kamu terdeteksi spam karena mengirim pesan terlalu cepat yaa, chat kamu dijeda dulu selama 5 menit ya kak, setelah 5 menit boleh chat lagi ya, terima kasih banyak ya kakak!")
         async def unblock_job(context):
             blocked_users.discard(user_id)
@@ -97,6 +145,7 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "halo kak selamat malam 𖹭\n\n"
             "mohon maaf toko sedang tutup jam 9 malam - 9 pagi WIB\n\n"
             "silahkan kirim ulang format nya pas jam buka ya kakk\n\n"
+            "kalau butuh yang fast respon bisa langsung kirim format nya ke @pentingY ya kak, admin fast standby di sana 24 jam 𖹭\n\n"
             "makasih banyak ya kak!"
         )
         return
@@ -123,25 +172,108 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_product_valid(produk):
         await update.message.reply_text("produknya kurang lengkap kak")
         return
+
+    clean_tujuan = re.sub(r'[^0-9]', '', tujuan)
+    if clean_tujuan in blacklist_map:
+        alasan = blacklist_map[clean_tujuan]
+        await update.message.reply_text(f"mohon maaf kak nomor {tujuan} terblacklist karena {alasan} ya 𖹭 silahkan hubungi @cAsisten jika merasa salah")
+        for aid in ADMIN_IDS:
+            try: await context.bot.send_message(chat_id=aid, text=f"⚠️ BLACKLIST ORDER DITOLAK\nNomor: {tujuan} ({alasan})\nBuyer: {buyer_info}\n{text}")
+            except: pass
+        return
+
     last_order_by_user[update.effective_chat.id] = text
-    sent = await context.bot.send_message(chat_id=ADMIN_ID, text=f"order baru buyer {buyer_info}\n\n{text}")
-    order_map[sent.message_id] = {"buyer_id": update.effective_chat.id, "buyer_text": text}
-    await update.message.reply_text("diterima kak admin akan segera cek ya")
+    operator = detect_operator(tujuan)
+    operator_note = f"\n🤖 Auto Deteksi: {operator}" if operator!= "Tidak terdeteksi" else ""
+
+    for aid in ADMIN_IDS:
+        try:
+            sent = await context.bot.send_message(chat_id=aid, text=f"order baru buyer {buyer_info}{operator_note}\n\n{text}")
+            order_map[sent.message_id] = {"buyer_id": update.effective_chat.id, "buyer_text": text}
+        except: pass
+
+    if operator!= "Tidak terdeteksi":
+        await update.message.reply_text(f"diterima kak admin akan segera cek ya\n\nterdeteksi operator: {operator} 𖹭")
+    else:
+        await update.message.reply_text("diterima kak admin akan segera cek ya")
 
 async def handle_bukti_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id == ADMIN_ID: return
+    if is_admin(update.effective_user.id): return
     if update.effective_user.id in blocked_users: return
     if not update.message.photo: return
     buyer_info = get_buyer_info(update.effective_user)
     last_text = last_order_by_user.get(update.effective_chat.id, "-")
-    await context.bot.send_message(chat_id=ADMIN_ID, text=f"bukti tf masuk buyer {buyer_info}\n\n{last_text}")
-    await context.bot.forward_message(chat_id=ADMIN_ID, from_chat_id=update.effective_chat.id, message_id=update.message.message_id)
+    all_buyers.add(update.effective_chat.id)
+    for aid in ADMIN_IDS:
+        try:
+            await context.bot.send_message(chat_id=aid, text=f"bukti tf masuk buyer {buyer_info}\n\n{last_text}")
+            await context.bot.forward_message(chat_id=aid, from_chat_id=update.effective_chat.id, message_id=update.message.message_id)
+        except: pass
     await update.message.reply_text("bukti diterima kak mohon tunggu konfirmasi admin ya")
 
 async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id!= ADMIN_ID: return
+    global libur_mode, libur_pesan
+    if not is_admin(update.effective_user.id): return
     text_raw = update.message.text or ""
     low = text_raw.strip().lower()
+
+    if low.startswith(".bc"):
+        pesan_bc = text_raw[3:].strip()
+        if not pesan_bc:
+            await update.message.reply_text("format:.bc [pesan promo]\ncontoh:.bc XL 100GB cuma 80k hari ini aja!")
+            return
+        count = 0
+        for buyer_id in list(all_buyers):
+            try:
+                await context.bot.send_message(chat_id=buyer_id, text=f"📢 INFO PROMO MOURY TOKKI 𖹭\n\n{pesan_bc}\n\ncek pricelist: @kuotar")
+                count += 1
+            except: pass
+        await update.message.reply_text(f"done broadcast ke {count} buyer ✅")
+        return
+
+    if low.startswith(".bl "):
+        parts = text_raw[3:].strip().split(" ",1)
+        nomor = re.sub(r'[^0-9]', '', parts[0])
+        alasan = parts[1] if len(parts)>1 else "tanpa alasan"
+        if not nomor:
+            await update.message.reply_text("format:.bl [nomor] [alasan]\ncontoh:.bl 082112345678 penipu")
+            return
+        blacklist_map[nomor] = alasan
+        await update.message.reply_text(f"done blacklist {nomor} alasan: {alasan} ✅")
+        return
+
+    if low.startswith(".unbl"):
+        nomor = re.sub(r'[^0-9]', '', text_raw.replace(".unbl","").strip())
+        if nomor in blacklist_map:
+            del blacklist_map[nomor]
+            await update.message.reply_text(f"done unblacklist {nomor} ✅")
+        else:
+            await update.message.reply_text(f"nomor {nomor} tidak ada di blacklist")
+        return
+
+    if low.startswith(".listbl"):
+        if not blacklist_map:
+            await update.message.reply_text("blacklist kosong")
+        else:
+            teks = "🚫 LIST BLACKLIST 𖹭\n\n"
+            for n,a in blacklist_map.items():
+                teks += f"{n} : {a}\n"
+            await update.message.reply_text(teks)
+        return
+
+    if low.startswith(".libur"):
+        pesan = text_raw[6:].strip()
+        if not pesan: pesan = "toko sedang libur ya kak, akan buka kembali segera 𖹭"
+        libur_mode = True
+        libur_pesan = pesan
+        await update.message.reply_text(f"done mode LIBUR aktif ✅\nPesan: {pesan}\n\nketik.buka untuk buka toko lagi")
+        return
+
+    if low.startswith(".buka"):
+        libur_mode = False
+        libur_pesan = ""
+        await update.message.reply_text("done toko BUKA lagi ✅ mode libur dimatikan")
+        return
 
     if low.startswith(".setstok"):
         isi = text_raw.replace(".setstok","").strip().lower()
@@ -278,67 +410,4 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    data = query.data
-    user_id = query.from_user.id
-    try:
-        prefix, action, order_msg_id = data.split("_", 2)
-        order_msg_id = int(order_msg_id)
-    except: return
-    if order_msg_id not in order_map:
-        await query.edit_message_text("order sudah tidak tersedia kak")
-        return
-    order_data = order_map[order_msg_id]
-    buyer_text = order_data["buyer_text"]
-    buyer_id = order_data["buyer_id"]
-    if user_id!= buyer_id and user_id!= ADMIN_ID: return
-    produk_val = get_field(buyer_text, 'produk') or '-'
-    tujuan_val = get_field(buyer_text, 'tujuan') or '-'
-
-    if prefix == "harga":
-        if action == "lanjut":
-            teks = (
-                f"siap kak 𖹭\n\n"
-                f"dicatat ya mau tetap lanjut dengan harga terbaru ya kak.\n\n"
-                f"produk : {produk_val}\n"
-                f"tujuan : {tujuan_val}\n\n"
-                "silahkan tunggu instruksi pembayaran dari admin ya kak!"
-            )
-            await query.edit_message_text(teks)
-            await context.bot.send_message(chat_id=ADMIN_ID, text=f"✅ BUYER MAU LANJUT HARGA BARU\nTujuan: {tujuan_val}\n{buyer_text}\n-> tinggal.pay kak")
-        else:
-            teks = f"oke kak dicatat ya tidak jadi 𖹭\n\norder untuk {tujuan_val} dibatalkan karena harga berubah ya kak. makasih banyak ya 🙏"
-            await query.edit_message_text(teks)
-            await context.bot.send_message(chat_id=ADMIN_ID, text=f"❌ BUYER BATAL HARGA BERUBAH\n{buyer_text}")
-            if order_msg_id in order_map: del order_map[order_msg_id]
-
-    elif prefix == "cek":
-        if action == "lanjut":
-            teks = (
-                f"siap kak 𖹭\n\n"
-                f"dicatat ya mau lanjut setelah aktifkan masa aktif terlebih dahulu ya kak.\n\n"
-                f"silahkan isi pulsa / masa aktif dulu untuk nomor {tujuan_val} ya kak, kalau sudah aktif silahkan kirim format ulang ya biar bisa langsung diproses.\n\n"
-                f"produk : {produk_val}\n"
-                f"tujuan : {tujuan_val}"
-            )
-            await query.edit_message_text(teks)
-            await context.bot.send_message(chat_id=ADMIN_ID, text=f"✅ BUYER MAU AKTIFKAN MASA AKTIF DULU\nTujuan: {tujuan_val}\n{buyer_text}")
-        else:
-            teks = f"oke kak dicatat ya tidak jadi 𖹭\n\norder untuk nomor {tujuan_val} dibatalkan ya kak. makasih banyak!"
-            await query.edit_message_text(teks)
-            await context.bot.send_message(chat_id=ADMIN_ID, text=f"❌ BUYER BATAL KARENA TENGGANG\n{buyer_text}")
-            if order_msg_id in order_map: del order_map[order_msg_id]
-
-def main():
-    app = Application.builder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start_command))
-    app.add_handler(CallbackQueryHandler(handle_callback))
-    app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_admin_reply))
-    app.add_handler(MessageHandler(filters.PHOTO, handle_bukti_photo))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_buyer))
-    print("bot jalan")
-    app.run_polling()
-
-if __name__ == "__main__":
-    main()
+    query = update.callback_que
