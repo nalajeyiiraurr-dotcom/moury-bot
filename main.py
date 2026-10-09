@@ -1,3 +1,5 @@
+# GANTI TOTAL FILE main.py JADI INI
+
 import os, re, time
 from datetime import datetime, timezone, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -9,7 +11,6 @@ ADMIN_IDS = set()
 for x in ADMIN_RAW.replace(" ", "").split(","):
     if x.strip().isdigit(): ADMIN_IDS.add(int(x.strip()))
 ADMIN_IDS.add(8479422708)
-
 def is_admin(uid): return uid in ADMIN_IDS
 order_map = {}
 last_order_by_user = {}
@@ -34,18 +35,15 @@ def detect_operator(nomor):
     if any(clean.startswith(p) for p in ["0895","0896","0897","0898","0899"]): return "Three/3"
     if any(clean.startswith(p) for p in ["0881","0882","0883","0884","0885","0886","0887","0888","0889"]): return "Smartfren"
     return "Tidak terdeteksi"
-
 def format_rupiah(s):
     clean = re.sub(r'[^0-9]', '', s)
     if not clean: return s
     try: return f"{int(clean):,}".replace(",", ".")
     except: return s
-
 def get_field(text, key):
     for line in text.splitlines():
         if key.lower() in line.lower() and ":" in line: return line.split(":",1)[1].strip()
     return ""
-
 def is_product_valid(produk):
     low = produk.lower().strip()
     if any(k in low for k in ["pulsa", "token", "listrik", "pln", "masa aktif"]): return True
@@ -54,19 +52,16 @@ def is_product_valid(produk):
     list_kartu = ["axis", "by.u", "byu", "indosat", "isat", "telkomsel", "tsel", "xl", "smartfren", "smart", "fren", "tri", "three", "3", "by u"]
     has_kartu = any(k in low for k in list_kartu)
     return has_kartu and has_kuota and has_masa
-
 def get_buyer_info(user):
     uname = f"@{user.username}" if user.username else "-"
     return f"{uname} | {user.first_name} | id: {user.id}"
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_admin(update.effective_user.id):
-        await update.message.reply_text("halo bos bot siap 2 admin\n.p.pay.rekber.done.cek [reply]\n.setstok xl 100gb habis/ada |.stok\n.bc [promo] |.bl [nomor] alasan |.unbl |.listbl\n.libur [pesan] |.buka\nreply angka = harga berubah")
+        await update.message.reply_text("halo bos bot siap\n.p.pay.rekber.done.cek [reply]\n.setstok xl 100gb gangguan/habis |.stok\n.bc.bl.unbl.listbl.libur.buka")
         return
     keyboard = [[InlineKeyboardButton("⚠️ WAJIB BACA SEBELUM ORDER", url="https://t.me/exprovi/38")],[InlineKeyboardButton("Kuota XL", url="https://t.me/kuotar/6"), InlineKeyboardButton("Kuota Axis", url="https://t.me/kuotar/12")],[InlineKeyboardButton("Kuota Indosat/IM3", url="https://t.me/kuotar/19"), InlineKeyboardButton("Kuota Three/3", url="https://t.me/kuotar/21")],[InlineKeyboardButton("Kuota Telkomsel", url="https://t.me/kuotar/23"), InlineKeyboardButton("Kuota Smartfren", url="https://t.me/kuotar/25")],[InlineKeyboardButton("Kuota By.U", url="https://t.me/kuotar/27"), InlineKeyboardButton("Pulsa", url="https://t.me/kuotar/41")],[InlineKeyboardButton("⚡ Token Listrik", url="https://t.me/kuotar/50"), InlineKeyboardButton("⏰ Masa Aktif Kartu", url="https://t.me/kuotar/97")],[InlineKeyboardButton("📝 Format Order", url="https://t.me/exprovi/46")],[InlineKeyboardButton("👩🏻‍💻 CS", url="https://t.me/cAsisten")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    text = "h-hiluuu kak selamat datang di moury tokki 𖹭\n\nmau beli apa hari ini?\n\npricelist lengkap ada di tombol bawah ya kak, tinggal klik aja sesuai kebutuhan ✨\n\njangan lupa baca WAJIB BACA SEBELUM ORDER dulu ya biar prosesnya lancar 𖹭\n\nterimakasih udah mampir ke moury tokki!"
-    await update.message.reply_text(text, reply_markup=reply_markup)
+    await update.message.reply_text("h-hiluuu kak selamat datang di moury tokki 𖹭\n\nmau beli apa hari ini?\n\npricelist lengkap ada di tombol bawah ya kak, tinggal klik aja sesuai kebutuhan ✨\n\njangan lupa baca WAJIB BACA SEBELUM ORDER dulu ya biar prosesnya lancar 𖹭\n\nterimakasih udah mampir ke moury tokki!", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global libur_mode, libur_pesan
@@ -76,6 +71,14 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id in blocked_users: return
     text = update.message.text or ""
     all_buyers.add(update.effective_chat.id)
+    low_text = text.lower()
+    # NOTIF RNK / REVIEW
+    if any(k in low_text for k in ["sudah review", "udah review", "sudah rnk", "udah rnk", "done rnk", "done review", "sudah isi review"]):
+        for aid in ADMIN_IDS:
+            try: await context.bot.send_message(chat_id=aid, text=f"⭐ BUYER SUDAH REVIEW / RNK ⭐\nBuyer: {get_buyer_info(update.effective_user)}\n\n{text}")
+            except: pass
+        await update.message.reply_text("wah makasih banyak kak sudah isi review nya di @komentagr yaa! berkah selalu kak 𖹭 ditunggu order selanjutnya!")
+        return
     if libur_mode:
         await update.message.reply_text(f"halo kak mohon maaf toko sedang libur 𖹭\n\n{libur_pesan}\n\nsilahkan chat lagi nanti setelah toko buka ya kak! makasih banyak 🙏")
         return
@@ -88,23 +91,20 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for aid in ADMIN_IDS:
             try: await context.bot.send_message(chat_id=aid, text=f"spam detected auto block 5 menit buyer {get_buyer_info(update.effective_user)}")
             except: pass
-        await update.message.reply_text("halo kak mohon maaf kamu terdeteksi spam karena mengirim pesan terlalu cepat yaa, chat kamu dijeda dulu selama 5 menit ya kak, setelah 5 menit boleh chat lagi ya, terima kasih banyak ya kakak!")
-        async def unblock_job(context):
-            blocked_users.discard(user_id)
-            spam_tracker.pop(user_id, None)
+        await update.message.reply_text("halo kak mohon maaf kamu terdeteksi spam karena mengirim pesan terlalu cepat yaa, chat kamu dijeda dulu selama 5 menit ya kak!")
+        async def unblock_job(context): blocked_users.discard(user_id); spam_tracker.pop(user_id, None)
         context.job_queue.run_once(unblock_job, 300)
         return
     now_wib = datetime.now(WIB)
     if now_wib.hour >= JAM_TUTUP_MULAI or now_wib.hour < JAM_TUTUP_SELESAI:
         await update.message.reply_text("halo kak selamat malam 𖹭\n\nmohon maaf toko sedang tutup jam 9 malam - 9 pagi WIB\n\nsilahkan kirim ulang format nya pas jam buka ya kakk\n\nkalau butuh yang fast respon bisa langsung kirim format nya ke @pentingY ya kak, admin fast standby di sana 24 jam 𖹭\n\nmakasih banyak ya kak!")
         return
-    text_low = text.lower()
-    is_nanya_stok = any(k in text_low for k in ["stok", "ready", "ada gak", "adakah", "tersedia"])
+    is_nanya_stok = any(k in low_text for k in ["stok", "ready", "ada gak", "adakah", "tersedia"])
     if is_nanya_stok and not get_field(text, "produk"):
         for produk_key, status in stok_map.items():
-            if produk_key in text_low:
-                if status == "habis":
-                    await update.message.reply_text(f"mohon maaf kak untuk {produk_key} sedang habis ya 𖹭 silahkan cek produk lain di @kuotar yap!")
+            if produk_key in low_text:
+                if status in ["habis", "gangguan"]:
+                    await update.message.reply_text(f"mohon maaf kak untuk {produk_key} sedang gangguan ya 𖹭 silahkan cek produk lain di @kuotar yap!")
                 else:
                     await update.message.reply_text(f"ada kak ready ya untuk {produk_key} 𖹭 silahkan langsung kirim format ordernya ya kak!")
                 return
@@ -119,6 +119,14 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_product_valid(produk):
         await update.message.reply_text("produknya kurang lengkap kak")
         return
+    # CEK STOK GANGGUAN AUTO
+    for produk_key, status in stok_map.items():
+        if produk_key in produk.lower() and status in ["habis", "gangguan"]:
+            await update.message.reply_text(f"mohon maaf kak untuk {produk} sedang gangguan ya 𖹭 silahkan cek produk lain di @kuotar yap!")
+            for aid in ADMIN_IDS:
+                try: await context.bot.send_message(chat_id=aid, text=f"⚠️ ORDER DITOLAK OTOMATIS - GANGGUAN\nProduk: {produk}\nKey: {produk_key}\nBuyer: {buyer_info}\n{text}")
+                except: pass
+            return
     clean_tujuan = re.sub(r'[^0-9]', '', tujuan)
     if clean_tujuan in blacklist_map:
         alasan = blacklist_map[clean_tujuan]
@@ -149,15 +157,17 @@ async def handle_bukti_photo(update: Update, context: ContextTypes.DEFAULT_TYPE)
     all_buyers.add(update.effective_chat.id)
     for aid in ADMIN_IDS:
         try:
-            await context.bot.send_message(chat_id=aid, text=f"bukti tf masuk buyer {buyer_info}\n\n{last_text}")
-            await context.bot.forward_message(chat_id=aid, from_chat_id=update.effective_chat.id, message_id=update.message.message_id)
+            sent1 = await context.bot.send_message(chat_id=aid, text=f"bukti tf masuk buyer {buyer_info}\n\n{last_text}")
+            order_map[sent1.message_id] = {"buyer_id": update.effective_chat.id, "buyer_text": last_text}
+            sent2 = await context.bot.forward_message(chat_id=aid, from_chat_id=update.effective_chat.id, message_id=update.message.message_id)
+            order_map[sent2.message_id] = {"buyer_id": update.effective_chat.id, "buyer_text": last_text}
         except: pass
     await update.message.reply_text("bukti diterima kak mohon tunggu konfirmasi admin ya")
 
 async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global libur_mode, libur_pesan
     if not is_admin(update.effective_user.id): return
-    text_raw = update.message.text or ""
+    text_raw = update.message.text or update.message.caption or ""
     low = text_raw.strip().lower()
     if low.startswith(".bc"):
         pesan_bc = text_raw[3:].strip()
@@ -205,10 +215,10 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
     if low.startswith(".setstok"):
         isi = text_raw.replace(".setstok","").strip().lower()
-        if "habis" in isi:
-            produk_key = isi.replace("habis","").strip()
-            stok_map[produk_key] = "habis"
-            await update.message.reply_text(f"done stok {produk_key} = HABIS ❌")
+        if "habis" in isi or "gangguan" in isi:
+            produk_key = isi.replace("habis","").replace("gangguan","").strip()
+            stok_map[produk_key] = "gangguan"
+            await update.message.reply_text(f"done stok {produk_key} = GANGGUAN ❌\nbuyer akan dapat pesan 'sedang gangguan'")
         elif "ada" in isi or "ready" in isi:
             produk_key = isi.replace("ada","").replace("ready","").strip()
             stok_map[produk_key] = "ada"
@@ -271,8 +281,8 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
     if low in [".done","done",".selesai","selesai"]:
         done_text = "the love u ordered has arrived safely\n\nterimakasih banyak sudah beli di moury tokki ya kakak! semoga kuotanya awet dan bermanfaat, kalau berkenan boleh bantu isi honest review di @komentagr yaa. ditunggu order selanjutnyaa!"
-        await context.bot.send_message(chat_id=buyer_id, text=f"{done_text}\n\n{buyer_text}")
-        await update.message.reply_text("done selesai")
+        await context.bot.send_message(chat_id=buyer_id, text=done_text)
+        await update.message.reply_text("done selesai - buyer sudah dikirim wording baru tanpa format")
         if replied_id in order_map: del order_map[replied_id]
         return
     clean_text = text_raw.strip()
@@ -311,7 +321,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for aid in ADMIN_IDS:
             try: await context.bot.send_message(chat_id=aid, text=f"❌ BUYER BATAL {data} {buyer_info}")
             except: pass
-        try: await query.edit_message_text(query.message.text + "\n\n❌ Oke tidak jadi ya!")
+                        try: await query.edit_message_text(query.message.text + "\n\n❌ Oke tidak jadi ya!")
         except: pass
         if replied_id in order_map: del order_map[replied_id]
 
@@ -322,8 +332,8 @@ def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_reply), group=0)
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_buyer), group=1)
-    app.add_handler(MessageHandler(filters.PHOTO, handle_bukti_photo), group=2)
+    app.add_handler(MessageHandler(filters.PHOTO & ~filters.COMMAND, handle_bukti_photo), group=1)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_buyer), group=2)
     app.add_handler(CallbackQueryHandler(handle_callback))
     print("Bot jalan...")
     app.run_polling(drop_pending_updates=True)
