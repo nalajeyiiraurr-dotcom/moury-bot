@@ -30,6 +30,8 @@ def get_field(text, key):
 
 def is_product_valid(produk):
     low = produk.lower().strip()
+    if any(k in low for k in ["pulsa", "token", "listrik", "pln", "masa aktif"]):
+        return True
     has_kuota = bool(re.search(r'\d+(\.\d+)?\s*(gb|mb|giga)', low))
     has_masa = bool(re.search(r'\d*\s*(hari|tahun|bulan|minggu)', low))
     list_kartu = ["axis", "by.u", "byu", "indosat", "isat", "telkomsel", "tsel", "xl", "smartfren", "smart", "fren", "tri", "three", "3", "by u"]
@@ -60,15 +62,13 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("👩🏻‍💻 CS t.me/cAsisten", url="https://t.me/cAsisten")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    text = """h-hiluuu kak selamat datang di moury tokki 𖹭
-
-mau beli apa hari ini?
-
-pricelist lengkap ada di tombol bawah ya kak, tinggal klik aja sesuai kebutuhan ✨
-
-jangan lupa baca WAJIB BACA SEBELUM ORDER dulu ya biar prosesnya lancar 𖹭
-
-terimakasih udah mampir ke moury tokki!"""
+    text = (
+        "h-hiluuu kak selamat datang di moury tokki 𖹭\n\n"
+        "mau beli apa hari ini?\n\n"
+        "pricelist lengkap ada di tombol bawah ya kak, tinggal klik aja sesuai kebutuhan ✨\n\n"
+        "jangan lupa baca WAJIB BACA SEBELUM ORDER dulu ya biar prosesnya lancar 𖹭\n\n"
+        "terimakasih udah mampir ke moury tokki!"
+    )
     await update.message.reply_text(text, reply_markup=reply_markup)
 
 async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -91,7 +91,6 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.job_queue.run_once(unblock_job, 300)
         return
 
-    # --- JAM TUTUP 9 MALAM - 7 PAGI (FIX PUNYA KAKAK) ---
     now_wib = datetime.now(WIB)
     if now_wib.hour >= JAM_TUTUP_MULAI or now_wib.hour < JAM_TUTUP_SELESAI:
         await update.message.reply_text(
@@ -102,7 +101,6 @@ async def handle_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # --- AUTO JAWAB STOK ---
     text_low = text.lower()
     is_nanya_stok = any(k in text_low for k in ["stok", "ready", "ada gak", "adakah", "tersedia"])
     if is_nanya_stok and not get_field(text, "produk"):
@@ -189,15 +187,13 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     if low.startswith(".cek") or low == "cek":
         tujuan_val = get_field(buyer_text, 'tujuan') or '-'
-        teks_tenggang = f"""🚨 prittt prittt! kartumu sedang masa tenggang.
-
-silahkan isi pulsa atau masa aktif terlebih dahulu agar nomor kembali aktif. kalau ditanya *"jadi gabisa?" atau "jadi gimana?"*, jawabannya sudah ada di atas ya kak: *aktifkan nomor terlebih dahulu!.*
-
-📭 kalau mau isi pulsa atau masa aktif terlebih dahulu, saya juga menyediakan yaa. boleh cek di sini kalau berminat: [ t.me/kuotar/102 ] <3
-
-━━━━━━━━━━━━━━
-nomor tujuan: {tujuan_val}
-apakah mau tetap lanjut atau tidak jadi kak?"""
+        teks_tenggang = (
+            "🚨 prittt prittt! kartumu sedang masa tenggang.\n\n"
+            "silahkan isi pulsa atau masa aktif terlebih dahulu agar nomor kembali aktif. kalau ditanya jadi gabisa? atau jadi gimana?, jawabannya sudah ada di atas ya kak: aktifkan nomor terlebih dahulu!.\n\n"
+            "📭 kalau mau isi pulsa atau masa aktif terlebih dahulu, saya juga menyediakan yaa. boleh cek di sini kalau berminat: [ t.me/kuotar/102 ] <3\n\n"
+            f"━━━━━━━━━━━━━━\nnomor tujuan: {tujuan_val}\n"
+            "apakah mau tetap lanjut atau tidak jadi kak?"
+        )
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ Mau Lanjut (Aktifkan Dulu)", callback_data=f"cek_lanjut_{replied_id}"),
              InlineKeyboardButton("❌ Maaf Tidak Jadi", callback_data=f"cek_batal_{replied_id}")]
@@ -266,14 +262,13 @@ apakah mau tetap lanjut atau tidak jadi kak?"""
             nominal = clean_text
         produk_val = get_field(buyer_text, 'produk') or '-'
         tujuan_val = get_field(buyer_text, 'tujuan') or '-'
-        teks_harga = f"""halo kak mohon maaf harga berubah ya 𖹭
-
-untuk produk: {produk_val}
-tujuan : {tujuan_val}
-
-harga terbarunya jadi Rp {nominal} ya kak
-
-apakah mau lanjut atau tidak jadi kak?"""
+        teks_harga = (
+            f"halo kak mohon maaf harga berubah ya 𖹭\n\n"
+            f"untuk produk: {produk_val}\n"
+            f"tujuan : {tujuan_val}\n\n"
+            f"harga terbarunya jadi Rp {nominal} ya kak\n\n"
+            "apakah mau lanjut atau tidak jadi kak?"
+        )
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ Mau Lanjut", callback_data=f"harga_lanjut_{replied_id}"),
              InlineKeyboardButton("❌ Maaf Tidak Jadi", callback_data=f"harga_batal_{replied_id}")]
@@ -303,38 +298,34 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if prefix == "harga":
         if action == "lanjut":
-            teks = f"""siap kak 𖹭
-
-dicatat ya mau tetap lanjut dengan harga terbaru ya kak.
-
-produk : {produk_val}
-tujuan : {tujuan_val}
-
-silahkan tunggu instruksi pembayaran dari admin ya kak!"""
+            teks = (
+                f"siap kak 𖹭\n\n"
+                f"dicatat ya mau tetap lanjut dengan harga terbaru ya kak.\n\n"
+                f"produk : {produk_val}\n"
+                f"tujuan : {tujuan_val}\n\n"
+                "silahkan tunggu instruksi pembayaran dari admin ya kak!"
+            )
             await query.edit_message_text(teks)
             await context.bot.send_message(chat_id=ADMIN_ID, text=f"✅ BUYER MAU LANJUT HARGA BARU\nTujuan: {tujuan_val}\n{buyer_text}\n-> tinggal.pay kak")
         else:
-            teks = f"""oke kak dicatat ya tidak jadi 𖹭
-
-order untuk {tujuan_val} dibatalkan karena harga berubah ya kak. makasih banyak ya 🙏"""
+            teks = f"oke kak dicatat ya tidak jadi 𖹭\n\norder untuk {tujuan_val} dibatalkan karena harga berubah ya kak. makasih banyak ya 🙏"
             await query.edit_message_text(teks)
             await context.bot.send_message(chat_id=ADMIN_ID, text=f"❌ BUYER BATAL HARGA BERUBAH\n{buyer_text}")
             if order_msg_id in order_map: del order_map[order_msg_id]
 
     elif prefix == "cek":
         if action == "lanjut":
-            teks = f"""siap kak 𖹭
-
-dicatat ya mau lanjut setelah aktifkan masa aktif terlebih dahulu ya kak.
-
-silahkan isi pulsa / masa aktif dulu untuk nomor {tujuan_val} ya kak, kalau sudah aktif silahkan kirim format ulang ya biar bisa langsung diproses.
-
+            teks = (
+                f"siap kak 𖹭\n\n"
+                f"dicatat ya mau lanjut setelah aktifkan masa aktif terlebih dahulu ya kak.\n\n"
+                f"silahkan isi pulsa / masa aktif dulu untuk nomor {tujuan_val} ya kak, kalau sudah aktif silahkan kirim format ulang ya biar bisa langsung diproses.\n\n"
+                f"produk : {produk_val}\n"
+                f"tujuan : {tujuan_val}"
+            )
             await query.edit_message_text(teks)
             await context.bot.send_message(chat_id=ADMIN_ID, text=f"✅ BUYER MAU AKTIFKAN MASA AKTIF DULU\nTujuan: {tujuan_val}\n{buyer_text}")
         else:
-            teks = f"""oke kak dicatat ya tidak jadi 𖹭
-
-order untuk nomor {tujuan_val} dibatalkan ya kak. makasih banyak!"""
+            teks = f"oke kak dicatat ya tidak jadi 𖹭\n\norder untuk nomor {tujuan_val} dibatalkan ya kak. makasih banyak!"
             await query.edit_message_text(teks)
             await context.bot.send_message(chat_id=ADMIN_ID, text=f"❌ BUYER BATAL KARENA TENGGANG\n{buyer_text}")
             if order_msg_id in order_map: del order_map[order_msg_id]
