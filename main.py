@@ -410,4 +410,49 @@ async def handle_admin_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_que
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+    try:
+        replied_id = int(data.rsplit("_", 2)[-1])
+    except:
+        return
+    if replied_id not in order_map:
+        try:
+            await query.edit_message_text("order sudah selesai ya kak")
+        except:
+            pass
+        return
+    buyer_info = get_buyer_info(query.from_user)
+    if "lanjut" in data:
+        for aid in ADMIN_IDS:
+            try:
+                await context.bot.send_message(chat_id=aid, text=f"BUYER LANJUT {data} {buyer_info}")
+            except:
+                pass
+        await query.edit_message_text(query.message.text + "\n\nOke kak mau lanjut ya!")
+    else:
+        for aid in ADMIN_IDS:
+            try:
+                await context.bot.send_message(chat_id=aid, text=f"BUYER BATAL {data} {buyer_info}")
+            except:
+                pass
+        await query.edit_message_text(query.message.text + "\n\nOke tidak jadi ya!")
+        if replied_id in order_map:
+            del order_map[replied_id]
+
+def main():
+    if not BOT_TOKEN:
+        print("ERROR BOT_TOKEN kosong")
+        return
+    app = Application.builder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start_command))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_reply), group=0)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_buyer), group=1)
+    app.add_handler(MessageHandler(filters.PHOTO, handle_bukti_photo), group=2)
+    app.add_handler(CallbackQueryHandler(handle_callback))
+    print("Bot jalan...")
+    app.run_polling(drop_pending_updates=True)
+
+if __name__ == "__main__":
+    main()
